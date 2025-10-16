@@ -1,0 +1,134 @@
+Vraag 1: Toon alle kolommen en rijen uit staff (Sakila)
+
+SELECT *
+FROM staff;
+
+Vraag 2: Toon city_id en city uit city voor alle rijen (Sakila)
+
+SELECT c.city_id, c.city
+FROM city c;
+
+Vraag 3: Toon alle rijden uit customer waarvoor de klant actief is (Sakila)
+
+SELECT *
+FROM customer c
+WHERE c.active = 1;
+
+Vraag 4: Toon alle rijen uir payment die plaatsvonden in juli 2005 (Sakila)
+
+SELECT *
+FROM payment p
+WHERE p.payment_date LIKE '2005-07%';
+
+Vraag 5: Toon de 15 meest recente rijen uit rental, gesorteerd op rental_date van nieuw naar oud (Sakila)
+
+SELECT *
+FROM rental r
+ORDER BY r.last_update DESC
+LIMIT 15;
+
+Vraag 6: Toon de eerste 20 klanten alfabetisch op last_name, en dan op first_name (Sakila)
+
+SELECT *
+FROM customer c
+ORDER BY last_name ASC, first_name ASC
+LIMIT 20;
+
+Vraag 7: Voeg 1 nieuwe rij toe aan language met een zelfgekozen name en huidige datum/tijd voor last_update (Sakila)
+
+INSERT INTO language(language.name, language.last_update)
+VALUE ('Flemish',NOW());
+
+Vraag 8: Voeg 2 nieuwe rijden toe aan language in 1 opdracht (Sakila)
+
+INSERT INTO language(language.name, language.last_update)
+VALUES ('Spanish',NOW()),
+	   ('Russian', NOW());
+	   
+Vraag 9: Toon voor elke klant de volledige naam (first_name + last_name) en zijn/haar city (Sakila)
+
+SELECT c.first_name, c.last_name, ci.city
+FROM customer c
+LEFT JOIN address a ON c.address_id = a.address_id
+LEFT JOIN city ci ON a.city_id = ci.city_id;
+
+Vraag 10: Toon per store de manager (voor- en achternaam) en het adres van de store (Sakila)
+
+SELECT st.first_name, st.last_name, a.address
+FROM store s
+LEFT JOIN staff st ON s.manager_staff_id = st.staff_id
+LEFT JOIN address a ON s.address_id = a.address_id;
+
+Vraag 11: Toon per store het aantal rentals in 2005, gesorteerd van hoog naar laag (Sakila)
+
+SELECT s.store_id, COUNT(r.rental_id) AS aantalRentals
+FROM store s
+LEFT JOIN staff st ON s.manager_staff_id = st.staff_id
+LEFT JOIN rental r ON st.staff_id = r.staff_id
+WHERE r.rental_date LIKE '2005%'
+GROUP BY s.store_id
+ORDER BY aantalRentals DESC;
+
+Vraag 12: Toon per customer het totale betaalde bedrag(som van payment.amount). Toon enkel klanten met een totaal > 100 van hoog naar laag. (Sakila)
+
+SELECT c.first_name, c.last_name, SUM(p.amount) AS totaalBedrag
+FROM customer c 
+LEFT JOIN payment p ON c.customer_id = p.customer_id
+GROUP BY c.customer_id
+HAVING totaalBedrag > 100
+ORDER BY totaalBedrag DESC;
+
+Vraag 13: Maak een view die per city het aantal klanten bevat (Sakila)
+
+CREATE VIEW aantalklanten_city
+AS
+SELECT c.city, COUNT(cu.customer_id) as aantalKlanten
+FROM city c
+LEFT JOIN address a ON c.city_id = a.city_id
+LEFT JOIN customer cu ON a.address_id = cu.address_id
+GROUP BY c.city;
+
+Vraag 14: Schrijf een stored procedure die: IN: first_name en last_name vraagt van een customer, OUT: het aantal films dat deze klant gehuurd heeft (Sakila)
+
+DROP PROCEDURE IF EXISTS sp_movie_amount_customer;
+DELIMITER //
+
+CREATE PROCEDURE sp_movie_amount_customer(IN c_first_name VARCHAR(45),IN c_last_name VARCHAR(45),OUT n_amount INT)
+BEGIN 
+
+SELECT COUNT(r.rental_id) INTO n_amount 
+FROM customer c
+LEFT JOIN rental r ON c.customer_id = r.customer_id
+WHERE c.first_name = c_first_name && c.last_name = c_last_name
+GROUP BY c.customer_id;
+
+END //
+DELIMITER ;
+
+Vraag 15: Maak een nieuwe database aan
+
+CREATE DATABASE dbprojects;
+USE dbprojects;
+
+CREATE TABLE developer(
+	developer_id INT(11) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    first_name VARCHAR(50),
+    last_name VARCHAR(50),
+    email VARCHAR(100)
+);
+
+CREATE TABLE project(
+    project_id INT(11) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(50)
+);
+
+CREATE TABLE project_developer(
+    developer_id INT(11) UNSIGNED NOT NULL,
+    project_id INT(11) UNSIGNED NOT NULL,
+    role VARCHAR(50),
+    PRIMARY KEY(developer_id, project_id),
+    FOREIGN KEY (developer_id) REFERENCES developer(developer_id)
+							ON UPDATE RESTRICT ON DELETE RESTRICT,
+	FOREIGN KEY (project_id) REFERENCES project(project_id)
+							ON UPDATE RESTRICT ON DELETE RESTRICT
+);
